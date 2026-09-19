@@ -59,6 +59,37 @@ for the data file) — **bump `N` on every deploy that touches `app.js`,
 `style.css`, or `data/plugins.json`** so the new `index.html` always points
 at the matching fresh copies.
 
+## AI use in this project
+
+This project was built with [Claude Code](https://claude.com/claude-code), Anthropic's
+AI coding assistant, directed and reviewed by a human ([@SafetZahirovic](https://github.com/SafetZahirovic)).
+In the interest of transparency:
+
+- **The site, scripts, and this README were written by Claude**, prompted and
+  steered turn-by-turn by the repo owner (what to build, which bugs to fix, which
+  features to add). The owner reviewed and approved each change before it was
+  pushed, but did not hand-write the code.
+- **The plugin dataset (`data/plugins.json`) was assembled by an AI agent**, not
+  hand-curated. It ran GitHub code searches for `plugin.json` files, applied a
+  heuristic filter (`flags` is a list and `publish` is an object) to separate real
+  Decky plugins from unrelated projects that happen to reuse the same filename and
+  key names, and fetched each repo's README/release data via the GitHub API. That
+  heuristic is imperfect: it has already been tightened once after false positives
+  slipped through (see git history), and it may still miss valid plugins with an
+  unusual manifest shape, or include a repo that isn't actually a working plugin.
+- **Install commands are extracted mechanically**, not vetted for safety. The site
+  shows a `curl | bash` command whenever a repo contains a file matching
+  `*install*.sh` (excluding uninstallers) — no one has reviewed what those scripts
+  actually do. Treat every install command as untrusted third-party code, same as
+  you would if you found it by browsing the repo yourself.
+- **Nothing here has been fact-checked against the Decky Store or Discord** —
+  this is an independent index built purely from public GitHub metadata.
+
+If you spot a misclassified repo, a bad install-script match, or stale data,
+[open an issue](https://github.com/SafetZahirovic/decky-plugins-explorer/issues) —
+it likely reflects a limitation of the automated pipeline described above rather
+than a manually-reviewed editorial decision.
+
 ## Disclaimer
 
 Not affiliated with Valve or the Decky Loader project. Data is collected from public
