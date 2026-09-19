@@ -1,11 +1,14 @@
 (function () {
   "use strict";
 
-  const state = { plugins: [], filtered: [] };
+  const state = { plugins: [], filtered: [], selectedTags: new Set(), tagList: [] };
 
   const grid = document.getElementById("grid");
   const searchInput = document.getElementById("search");
-  const tagFilter = document.getElementById("tag-filter");
+  const tagPicker = document.getElementById("tag-picker");
+  const tagPillsEl = document.getElementById("tag-pills");
+  const tagSearchInput = document.getElementById("tag-search");
+  const tagSuggestionsEl = document.getElementById("tag-suggestions");
   const sortSelect = document.getElementById("sort");
   const statsEl = document.getElementById("stats");
   const emptyState = document.getElementById("empty-state");
@@ -111,11 +114,13 @@
 
   function applyFilters() {
     const q = searchInput.value.trim().toLowerCase();
-    const tag = tagFilter.value;
     let list = state.plugins;
 
-    if (tag) {
-      list = list.filter((entry) => getTags(entry).some((t) => t.toLowerCase() === tag));
+    if (state.selectedTags.size > 0) {
+      list = list.filter((entry) => {
+        const entryTags = getTags(entry).map((t) => t.toLowerCase());
+        return entryTags.some((t) => state.selectedTags.has(t));
+      });
     }
 
     if (q) {
@@ -156,7 +161,7 @@
     render();
   }
 
-  function populateTagFilter() {
+  function buildTagIndex() {
     const counts = new Map();
     state.plugins.forEach((entry) => {
       getTags(entry).forEach((t) => {
@@ -164,11 +169,62 @@
         counts.set(key, (counts.get(key) || 0) + 1);
       });
     });
-    const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-    const options = sorted
-      .map(([tag, count]) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)} (${count})</option>`)
+    state.tagList = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }
+
+  function renderTagPills() {
+    tagPillsEl.innerHTML = Array.from(state.selectedTags)
+      .map(
+        (tag) => `
+        <span class="tag-pill" data-tag="${escapeHtml(tag)}">
+          ${escapeHtml(tag)}
+          <button type="button" aria-label="Remove ${escapeHtml(tag)} filter">&times;</button>
+        </span>`
+      )
       .join("");
-    tagFilter.insertAdjacentHTML("beforeend", options);
+  }
+
+  function renderTagSuggestions() {
+    const q = tagSearchInput.value.trim().toLowerCase();
+    const matches = state.tagList
+      .filter(([tag]) => !state.selectedTags.has(tag))
+      .filter(([tag]) => !q || tag.includes(q))
+      .slice(0, 40);
+
+    if (matches.length === 0) {
+      tagSuggestionsEl.innerHTML = `<div class="tag-suggestion-empty">No matching tags</div>`;
+    } else {
+      tagSuggestionsEl.innerHTML = matches
+        .map(
+          ([tag, count]) => `
+          <div class="tag-suggestion-item" data-tag="${escapeHtml(tag)}">
+            <span>${escapeHtml(tag)}</span>
+            <span class="tag-suggestion-count">${count}</span>
+          </div>`
+        )
+        .join("");
+    }
+    tagSuggestionsEl.hidden = false;
+  }
+
+  function hideTagSuggestions() {
+    tagSuggestionsEl.hidden = true;
+  }
+
+  function addTag(tag) {
+    state.selectedTags.add(tag);
+    tagSearchInput.value = "";
+    renderTagPills();
+    renderTagSuggestions();
+    tagSearchInput.focus();
+    applyFilters();
+  }
+
+  function removeTag(tag) {
+    state.selectedTags.delete(tag);
+    renderTagPills();
+    if (!tagSuggestionsEl.hidden) renderTagSuggestions();
+    applyFilters();
   }
 
   function openReadme(entry) {
@@ -251,14 +307,44 @@
   });
 
   searchInput.addEventListener("input", applyFilters);
-  tagFilter.addEventListener("change", applyFilters);
   sortSelect.addEventListener("change", applyFilters);
 
-  fetch("data/plugins.json?v=2")
+  tagPillsEl.addEventListener("click", (e) => {
+    const pill = e.target.closest(".tag-pill");
+    if (pill) removeTag(pill.dataset.tag);
+  });
+
+  tagSearchInput.addEventListener("focus", renderTagSuggestions);
+  tagSearchInput.addEventListener("input", renderTagSuggestions);
+  tagSearchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      hideTagSuggestions();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const first = tagSuggestionsEl.querySelector(".tag-suggestion-item");
+      if (first) addTag(first.dataset.tag);
+    } else if (e.key === "Backspace" && !tagSearchInput.value) {
+      const last = Array.from(state.selectedTags).pop();
+      if (last) removeTag(last);
+    }
+  });
+
+  // Keep the input focused when clicking a suggestion (mousedown fires before blur).
+  tagSuggestionsEl.addEventListener("mousedown", (e) => e.preventDefault());
+  tagSuggestionsEl.addEventListener("click", (e) => {
+    const item = e.target.closest(".tag-suggestion-item");
+    if (item) addTag(item.dataset.tag);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!tagPicker.contains(e.target)) hideTagSuggestions();
+  });
+
+  fetch("data/plugins.json?v=3")
     .then((res) => res.json())
     .then((data) => {
       state.plugins = data;
-      populateTagFilter();
+      buildTagIndex();
       applyFilters();
     })
     .catch((err) => {

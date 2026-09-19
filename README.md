@@ -15,8 +15,9 @@ Live site: served via GitHub Pages from the repository root.
   repo and shows the one-line `curl | bash` command to run it on Linux.
 - Shows total release-asset downloads and the latest release date/tag, where the
   repo publishes GitHub Releases.
-- Client-side search, tag filter, and sort by stars / downloads / release date /
-  name. No backend.
+- Client-side search, a multi-select tag picker (searchable, selections shown as
+  removable pills; matches any selected tag), and sort by stars / downloads /
+  release date / name. No backend.
 
 ## Structure
 
