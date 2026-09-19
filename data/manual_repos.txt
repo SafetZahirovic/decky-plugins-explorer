@@ -1,0 +1,10 @@
+# Repos that a real plugin.json but that GitHub's code-search API doesn't
+# index (a known, undocumented-scope limitation of /search/code — see
+# scripts/search_repos.py). Reported missing by a user; add manually here so
+# they survive the nightly refresh instead of being silently dropped.
+#
+# One entry per line: owner/repo (assumes plugin.json at the repo root), or
+# owner/repo:path/to/plugin.json for a non-root manifest. Lines starting with
+# # are ignored.
+
+Featherwolf/EnhancedGV

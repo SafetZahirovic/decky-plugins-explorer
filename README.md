@@ -24,8 +24,15 @@ Live site: served via GitHub Pages from the repository root.
 - `index.html`, `style.css`, `app.js` — the static site itself.
 - `data/plugins.json` — pre-fetched dataset (repo metadata, plugin.json contents,
   README markdown, install script path) consumed by `app.js` at load time.
-- `scripts/search_repos.py` — runs the GitHub code search for `plugin.json` files
-  and prints deduped `owner/repo<TAB>blob-url` lines.
+- `scripts/search_repos.py` — runs the GitHub code search for `plugin.json` files,
+  merges in `data/manual_repos.txt`, and prints deduped `owner/repo<TAB>blob-url`
+  lines.
+- `data/manual_repos.txt` — repos with a real plugin.json that GitHub's
+  `/search/code` index doesn't cover (a known, undocumented-scope limitation —
+  it simply doesn't index every public repo, with no way to force it to). One
+  `owner/repo` per line (or `owner/repo:path/to/plugin.json` for a non-root
+  manifest). If a plugin you know exists is missing from the site, it's most
+  likely this — add it here rather than tweaking the search query.
 - `scripts/fetch_data.py` — rebuilds `data/plugins.json` from a list of
   `owner/repo<TAB>https://github.com/owner/repo/blob/<sha>/<path-to-plugin.json>` lines
   (as produced by `search_repos.py`). Requires `gh auth login`, or a `GH_TOKEN`/
