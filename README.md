@@ -52,8 +52,17 @@ python3 scripts/fetch_releases.py data/plugins.json
 ## Nightly refresh
 
 [`.github/workflows/refresh.yml`](.github/workflows/refresh.yml) runs the four
-commands above every night at **01:00 UTC** (plus on-demand via the Actions tab's
-"Run workflow" button) and commits `data/plugins.json` if anything changed.
+commands above every night at **01:00 Europe/Oslo time (CET/CEST)** (plus
+on-demand via the Actions tab's "Run workflow" button) and commits
+`data/plugins.json` if anything changed.
+
+GitHub Actions' `cron` schedule only runs in UTC and has no timezone concept,
+and Oslo's UTC offset changes twice a year (UTC+1 in winter, UTC+2 in summer),
+so the workflow declares two schedules — `0 0 * * *` and `0 23 * * *` — one
+of which lands on 01:00 local time depending on the season. A "Check local
+time" step computes the actual `Europe/Oslo` hour at run time and skips the
+rest of the job unless it's really 01:00, so only one of the two triggers
+does real work on any given day.
 
 The full refresh makes roughly 2,500+ GitHub API requests (a handful per repo,
 across ~600 repos). The default `GITHUB_TOKEN` GitHub Actions provides is capped
