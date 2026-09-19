@@ -20,13 +20,28 @@
       .replace(/"/g, "&quot;");
   }
 
-  function cardTemplate(entry) {
+  function getDescription(entry) {
     const p = entry.plugin || {};
     const pub = p.publish || {};
+    if (typeof pub.description === "string" && pub.description.trim()) return pub.description;
+    if (typeof p.description === "string" && p.description.trim()) return p.description;
+    return "No description provided.";
+  }
+
+  function getTags(entry) {
+    const p = entry.plugin || {};
+    const pub = p.publish || {};
+    if (Array.isArray(pub.tags)) return pub.tags.filter((t) => typeof t === "string");
+    if (Array.isArray(p.tags)) return p.tags.filter((t) => typeof t === "string");
+    return [];
+  }
+
+  function cardTemplate(entry) {
+    const p = entry.plugin || {};
     const name = escapeHtml(p.name || entry.repo);
-    const author = escapeHtml(p.author || entry.repo.split("/")[0]);
-    const desc = escapeHtml(pub.description || "No description provided.");
-    const tags = (pub.tags || []).slice(0, 6).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("");
+    const author = escapeHtml(typeof p.author === "string" && p.author ? p.author : entry.repo.split("/")[0]);
+    const desc = escapeHtml(getDescription(entry));
+    const tags = getTags(entry).slice(0, 6).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("");
     const stars = typeof entry.stars === "number" ? `★ ${entry.stars}` : "";
 
     let installBlock = "";
@@ -75,13 +90,12 @@
     if (q) {
       list = list.filter((entry) => {
         const p = entry.plugin || {};
-        const pub = p.publish || {};
         const haystack = [
           p.name,
-          p.author,
+          typeof p.author === "string" ? p.author : null,
           entry.repo,
-          pub.description,
-          ...(pub.tags || []),
+          getDescription(entry),
+          ...getTags(entry),
         ]
           .filter(Boolean)
           .join(" ")

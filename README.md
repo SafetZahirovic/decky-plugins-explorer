@@ -25,6 +25,11 @@ Live site: served via GitHub Pages from the repository root.
   (as produced by a GitHub code search for `plugin.json` files). Requires `gh auth login`.
 - `scripts/fix_install_scripts.py` — re-runs only the install-script detection step
   against an existing `data/plugins.json`.
+- `scripts/filter_dataset.py` — drops entries whose `plugin.json` doesn't actually
+  match the Decky schema (`flags` as a list, `publish` as an object). The code
+  search also turns up unrelated ecosystems — AI "skill" manifests, WordPress/TFS/
+  XL-Release plugins — that happen to reuse a `plugin.json` filename and some of
+  the same key names.
 
 ## Regenerating the data
 
@@ -33,6 +38,7 @@ gh search code "flags" "publish" filename:plugin.json --limit 1000 \
   --json path,repository,url > repos.json
 # convert repos.json to owner/repo<TAB>blob-url lines, then:
 python3 scripts/fetch_data.py repos.txt data/plugins.json
+python3 scripts/filter_dataset.py data/plugins.json
 ```
 
 ## Disclaimer
