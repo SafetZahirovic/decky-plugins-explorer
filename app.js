@@ -5,6 +5,7 @@
 
   const grid = document.getElementById("grid");
   const searchInput = document.getElementById("search");
+  const tagFilter = document.getElementById("tag-filter");
   const sortSelect = document.getElementById("sort");
   const statsEl = document.getElementById("stats");
   const emptyState = document.getElementById("empty-state");
@@ -36,13 +37,33 @@
     return [];
   }
 
+  function formatCount(n) {
+    if (!n) return "0";
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    return String(n);
+  }
+
+  function formatDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+
   function cardTemplate(entry) {
     const p = entry.plugin || {};
     const name = escapeHtml(p.name || entry.repo);
     const author = escapeHtml(typeof p.author === "string" && p.author ? p.author : entry.repo.split("/")[0]);
     const desc = escapeHtml(getDescription(entry));
     const tags = getTags(entry).slice(0, 6).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("");
-    const stars = typeof entry.stars === "number" ? `★ ${entry.stars}` : "";
+    const downloads = entry.downloads
+      ? `<span class="stat-chip" title="${entry.downloads.toLocaleString()} total asset downloads">⬇ ${formatCount(entry.downloads)}</span>`
+      : "";
+    const releaseDate = entry.latest_release && formatDate(entry.latest_release.published_at);
+    const releaseLine = releaseDate
+      ? `<div class="release-line">Latest release ${escapeHtml(entry.latest_release.tag || "")} &middot; ${releaseDate}</div>`
+      : "";
 
     let installBlock = "";
     if (entry.install_script) {
@@ -61,11 +82,15 @@
       <article class="card" data-repo="${escapeHtml(entry.repo)}">
         <div class="card-title-row">
           <h3><a href="${entry.url}" target="_blank" rel="noopener">${name}</a></h3>
-          <span class="stars">${stars}</span>
+          <div class="stat-chips">
+            <span class="stat-chip">★ ${entry.stars || 0}</span>
+            ${downloads}
+          </div>
         </div>
         <div class="author">by ${author}</div>
         <p class="description">${desc}</p>
         <div class="tags">${tags}</div>
+        ${releaseLine}
         ${installBlock}
         <div class="card-actions">
           <button class="btn primary readme-btn" ${readmeDisabled}>README</button>
@@ -86,7 +111,13 @@
 
   function applyFilters() {
     const q = searchInput.value.trim().toLowerCase();
+    const tag = tagFilter.value;
     let list = state.plugins;
+
+    if (tag) {
+      list = list.filter((entry) => getTags(entry).some((t) => t.toLowerCase() === tag));
+    }
+
     if (q) {
       list = list.filter((entry) => {
         const p = entry.plugin || {};
@@ -106,15 +137,38 @@
 
     const sortBy = sortSelect.value;
     list = list.slice().sort((a, b) => {
-      if (sortBy === "stars") return (b.stars || 0) - (a.stars || 0);
-      const an = (a.plugin && a.plugin.name) || a.repo;
-      const bn = (b.plugin && b.plugin.name) || b.repo;
-      return an.localeCompare(bn);
+      if (sortBy === "downloads") return (b.downloads || 0) - (a.downloads || 0);
+      if (sortBy === "release") {
+        const at = (a.latest_release && a.latest_release.published_at) || "";
+        const bt = (b.latest_release && b.latest_release.published_at) || "";
+        return bt.localeCompare(at);
+      }
+      if (sortBy === "name") {
+        const an = (a.plugin && a.plugin.name) || a.repo;
+        const bn = (b.plugin && b.plugin.name) || b.repo;
+        return an.localeCompare(bn);
+      }
+      return (b.stars || 0) - (a.stars || 0);
     });
 
     state.filtered = list;
     statsEl.textContent = `Showing ${list.length} of ${state.plugins.length} plugins`;
     render();
+  }
+
+  function populateTagFilter() {
+    const counts = new Map();
+    state.plugins.forEach((entry) => {
+      getTags(entry).forEach((t) => {
+        const key = t.toLowerCase();
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+    });
+    const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    const options = sorted
+      .map(([tag, count]) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)} (${count})</option>`)
+      .join("");
+    tagFilter.insertAdjacentHTML("beforeend", options);
   }
 
   function openReadme(entry) {
@@ -197,12 +251,14 @@
   });
 
   searchInput.addEventListener("input", applyFilters);
+  tagFilter.addEventListener("change", applyFilters);
   sortSelect.addEventListener("change", applyFilters);
 
   fetch("data/plugins.json")
     .then((res) => res.json())
     .then((data) => {
       state.plugins = data;
+      populateTagFilter();
       applyFilters();
     })
     .catch((err) => {

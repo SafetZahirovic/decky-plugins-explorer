@@ -88,16 +88,17 @@ body {
   font-size: 0.95rem;
 }
 
-#sort {
+#sort, #tag-filter {
   padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
   font-size: 0.9rem;
+  max-width: 220px;
 }
 
-#search:focus, #sort:focus {
+#search:focus, #sort:focus, #tag-filter:focus {
   outline: 2px solid var(--accent);
 }
 
@@ -149,11 +150,24 @@ body {
   color: var(--accent);
 }
 
-.stars {
+.stat-chips {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.stat-chip {
   font-size: 0.8rem;
   color: var(--text-dim);
   white-space: nowrap;
+}
+
+.release-line {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  margin-top: -4px;
 }
 
 .author {

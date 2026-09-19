@@ -17,8 +17,13 @@
       </p>
       <div class="search-row">
         <input id="search" type="search" placeholder="Search by name, author, tag, or description…" autocomplete="off" />
+        <select id="tag-filter">
+          <option value="">All tags</option>
+        </select>
         <select id="sort">
           <option value="stars">Sort: Stars</option>
+          <option value="downloads">Sort: Downloads</option>
+          <option value="release">Sort: Release date</option>
           <option value="name">Sort: Name</option>
         </select>
       </div>

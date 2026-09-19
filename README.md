@@ -13,7 +13,10 @@ Live site: served via GitHub Pages from the repository root.
 - Lets you preview each repo's rendered README in a modal, without leaving the page.
 - Detects an install script (any `*install*.sh` file, excluding uninstallers) in the
   repo and shows the one-line `curl | bash` command to run it on Linux.
-- Client-side search/filter across name, author, description, and tags. No backend.
+- Shows total release-asset downloads and the latest release date/tag, where the
+  repo publishes GitHub Releases.
+- Client-side search, tag filter, and sort by stars / downloads / release date /
+  name. No backend.
 
 ## Structure
 
@@ -30,6 +33,8 @@ Live site: served via GitHub Pages from the repository root.
   search also turns up unrelated ecosystems — AI "skill" manifests, WordPress/TFS/
   XL-Release plugins — that happen to reuse a `plugin.json` filename and some of
   the same key names.
+- `scripts/fetch_releases.py` — adds `downloads` (sum of release-asset download
+  counts) and `latest_release` (tag + published date) to each entry.
 
 ## Regenerating the data
 
@@ -39,6 +44,7 @@ gh search code "flags" "publish" filename:plugin.json --limit 1000 \
 # convert repos.json to owner/repo<TAB>blob-url lines, then:
 python3 scripts/fetch_data.py repos.txt data/plugins.json
 python3 scripts/filter_dataset.py data/plugins.json
+python3 scripts/fetch_releases.py data/plugins.json
 ```
 
 ## Disclaimer
