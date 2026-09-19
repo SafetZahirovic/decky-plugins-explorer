@@ -8,7 +8,12 @@ on:
     # skip the one that doesn't actually land on 01:00 local time.
     - cron: "0 0 * * *" # 01:00 CET (UTC+1, winter)
     - cron: "0 23 * * *" # 01:00 CEST (UTC+2, summer) - 23:00 UTC the day before
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass the local-time gate and run immediately (uncheck to test that the gate correctly skips)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -32,7 +37,8 @@ jobs:
       - name: Check local time
         id: gate
         run: |
-          if [ "${{ github.event_name }}" != "schedule" ]; then
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.force }}" = "true" ]; then
+            echo "Manual run with force=true - bypassing the local-time gate."
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
