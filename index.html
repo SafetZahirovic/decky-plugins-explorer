@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Decky Loader Plugin Registry</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>Decky Loader Plugin Registry</h1>
+      <p class="subtitle">
+        A searchable index of GitHub repositories that ship a
+        <code>plugin.json</code> manifest for
+        <a href="https://github.com/SteamDeckHomebrew/decky-loader" target="_blank" rel="noopener">Decky Loader</a>.
+      </p>
+      <div class="search-row">
+        <input id="search" type="search" placeholder="Search by name, author, tag, or description…" autocomplete="off" />
+        <select id="sort">
+          <option value="stars">Sort: Stars</option>
+          <option value="name">Sort: Name</option>
+        </select>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <main id="grid" class="grid"></main>
+
+  <p id="empty-state" class="empty-state" hidden>No plugins match your search.</p>
+
+  <footer class="site-footer">
+    <p>
+      Data collected from public GitHub repositories via code search for files matching the Decky Loader
+      <code>plugin.json</code> schema. Not affiliated with Valve or the Decky Loader project.
+    </p>
+  </footer>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal">
+      <button id="modal-close" class="modal-close" aria-label="Close">&times;</button>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.5/purify.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
