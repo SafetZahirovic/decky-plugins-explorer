@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 """Add release-download totals and latest-release date to data/plugins.json."""
 import json
+import os
 import subprocess
 import sys
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-TOKEN = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=True).stdout.strip()
+
+def get_token():
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        return token
+    return subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, check=True).stdout.strip()
+
+
+TOKEN = get_token()
 API = "https://api.github.com"
 
 

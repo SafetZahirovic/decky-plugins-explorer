@@ -1,0 +1,52 @@
+name: Refresh plugin data
+
+on:
+  schedule:
+    # 01:00 UTC nightly. GitHub Actions schedules always run in UTC.
+    - cron: "0 1 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-plugin-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Search, fetch, filter, and enrich
+        env:
+          GH_TOKEN: ${{ secrets.PLUGIN_DATA_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::PLUGIN_DATA_TOKEN repo secret is not set. See README.md > 'Nightly refresh' for setup steps."
+            exit 1
+          fi
+          python3 scripts/search_repos.py > repos.txt
+          python3 scripts/fetch_data.py repos.txt data/plugins.json
+          python3 scripts/filter_dataset.py data/plugins.json
+          python3 scripts/fetch_releases.py data/plugins.json
+          rm -f repos.txt
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/plugins.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Nightly plugin data refresh"
+            git push
+          fi

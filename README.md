@@ -24,9 +24,12 @@ Live site: served via GitHub Pages from the repository root.
 - `index.html`, `style.css`, `app.js` — the static site itself.
 - `data/plugins.json` — pre-fetched dataset (repo metadata, plugin.json contents,
   README markdown, install script path) consumed by `app.js` at load time.
+- `scripts/search_repos.py` — runs the GitHub code search for `plugin.json` files
+  and prints deduped `owner/repo<TAB>blob-url` lines.
 - `scripts/fetch_data.py` — rebuilds `data/plugins.json` from a list of
   `owner/repo<TAB>https://github.com/owner/repo/blob/<sha>/<path-to-plugin.json>` lines
-  (as produced by a GitHub code search for `plugin.json` files). Requires `gh auth login`.
+  (as produced by `search_repos.py`). Requires `gh auth login`, or a `GH_TOKEN`/
+  `GITHUB_TOKEN` env var.
 - `scripts/fix_install_scripts.py` — re-runs only the install-script detection step
   against an existing `data/plugins.json`.
 - `scripts/filter_dataset.py` — drops entries whose `plugin.json` doesn't actually
@@ -40,13 +43,36 @@ Live site: served via GitHub Pages from the repository root.
 ## Regenerating the data
 
 ```bash
-gh search code "flags" "publish" filename:plugin.json --limit 1000 \
-  --json path,repository,url > repos.json
-# convert repos.json to owner/repo<TAB>blob-url lines, then:
+python3 scripts/search_repos.py > repos.txt
 python3 scripts/fetch_data.py repos.txt data/plugins.json
 python3 scripts/filter_dataset.py data/plugins.json
 python3 scripts/fetch_releases.py data/plugins.json
 ```
+
+## Nightly refresh
+
+[`.github/workflows/refresh.yml`](.github/workflows/refresh.yml) runs the four
+commands above every night at **01:00 UTC** (plus on-demand via the Actions tab's
+"Run workflow" button) and commits `data/plugins.json` if anything changed.
+
+The full refresh makes roughly 2,500+ GitHub API requests (a handful per repo,
+across ~600 repos). The default `GITHUB_TOKEN` GitHub Actions provides is capped
+at 1,000 requests/hour, so the workflow needs a personal access token with the
+normal 5,000/hour limit instead, stored as a repo secret named
+`PLUGIN_DATA_TOKEN`:
+
+1. Create a token at [github.com/settings/tokens](https://github.com/settings/tokens)
+   (classic token, no scopes needed — everything read here is public) or a
+   fine-grained token scoped to "Public repositories (read-only)".
+2. Add it as a repo secret without ever pasting it into chat or a file:
+   ```bash
+   gh secret set PLUGIN_DATA_TOKEN --repo SafetZahirovic/decky-plugins-explorer
+   ```
+   (paste the token at the prompt), or via the repo's Settings → Secrets and
+   variables → Actions → "New repository secret" in the browser.
+
+Without that secret, the workflow fails fast with a clear error instead of
+silently hitting the rate limit partway through.
 
 ## Caching
 
@@ -84,6 +110,10 @@ In the interest of transparency:
   you would if you found it by browsing the repo yourself.
 - **Nothing here has been fact-checked against the Decky Store or Discord** —
   this is an independent index built purely from public GitHub metadata.
+- **The dataset re-runs unattended every night** (see "Nightly refresh" below).
+  Each run re-applies the same heuristics with no human in the loop, so a
+  misclassification isn't a one-off — check the pipeline logic, not just today's
+  data, before assuming an issue is fixed.
 
 If you spot a misclassified repo, a bad install-script match, or stale data,
 [open an issue](https://github.com/SafetZahirovic/decky-plugins-explorer/issues) —
