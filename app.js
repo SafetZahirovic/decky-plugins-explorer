@@ -254,7 +254,7 @@
   tagFilter.addEventListener("change", applyFilters);
   sortSelect.addEventListener("change", applyFilters);
 
-  fetch("data/plugins.json")
+  fetch("data/plugins.json?v=2")
     .then((res) => res.json())
     .then((data) => {
       state.plugins = data;

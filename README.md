@@ -47,6 +47,17 @@ python3 scripts/filter_dataset.py data/plugins.json
 python3 scripts/fetch_releases.py data/plugins.json
 ```
 
+## Caching
+
+GitHub Pages caches `index.html`, `app.js`, `style.css`, and `data/plugins.json`
+independently (`max-age=600`). Deploying `app.js`/`style.css` changes without
+also changing `index.html`'s reference to them can leave a visitor with a
+mismatched, stale copy of one file for up to 10 minutes. Each is referenced
+with a `?v=N` query string in `index.html` (and the fetch call in `app.js`
+for the data file) — **bump `N` on every deploy that touches `app.js`,
+`style.css`, or `data/plugins.json`** so the new `index.html` always points
+at the matching fresh copies.
+
 ## Disclaimer
 
 Not affiliated with Valve or the Decky Loader project. Data is collected from public
