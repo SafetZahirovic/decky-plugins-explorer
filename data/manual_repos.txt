@@ -8,3 +8,4 @@
 # # are ignored.
 
 Featherwolf/EnhancedGV
+PrivateiFox/XMDeck
